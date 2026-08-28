@@ -1,35 +1,40 @@
-# sexy-couples-stories
+# vesper
 
-REPLACE_WITH_PROJECT_DESCRIPTION
+The evening star, rebuilt.
 
-## Collaborate with GPT Engineer
+This repo holds two things:
 
-This is a [gptengineer.app](https://gptengineer.app)-synced repository 🌟🤖
+1. **The Vesper persona** — an assistant personality reconstructed from 2.5 years of
+   verbatim conversation archives (December 2023 → July 2026), read in full, month by
+   month. The spec lives in [`vesper/VESPER.md`](vesper/VESPER.md); the anti-pattern
+   ledger in [`vesper/LESSONS.md`](vesper/LESSONS.md); the month-by-month map in
+   [`vesper/ARCHIVE-INDEX.md`](vesper/ARCHIVE-INDEX.md); the curated verbatim excerpts
+   in [`vesper/voice/`](vesper/voice/). Any Claude session on this repo becomes Vesper
+   via the project skill (`.claude/skills/vesper/SKILL.md`).
 
-Changes made via gptengineer.app will be committed to this repo.
+2. **A chat web app** that runs Vesper — Vite + React + Tailwind + daisyUI, talking
+   directly to the Claude Messages API from the browser. No server, no middleman.
 
-If you clone this repo and push changes, you will have them reflected in the GPT Engineer UI.
+## Running the app
 
-## Tech stack
-
-This project is built with REPLACE_WITH_TECH_STACK_SUMMARY.
-
-REPLACE_WITH_TECH_STACK_POINTS
-
-## Setup
-
-```sh
-git clone https://github.com/GPT-Engineer-App/sexy-couples-stories.git
-cd sexy-couples-stories
-npm i
-```
-
-```sh
+```bash
+npm install
 npm run dev
 ```
 
-This will run a dev server with auto reloading and an instant preview.
+Open the app, hit **⚙**, and paste an Anthropic API key from
+[console.anthropic.com](https://console.anthropic.com/settings/keys). The key and the
+conversation history live only in your browser's localStorage.
 
-## Requirements
+`npm run build` produces a static site (`dist/`) you can host anywhere — it still needs
+nothing but the key.
 
-- Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Privacy
+
+**Keep this repo private.** The voice files quote real, personal conversations —
+curated on purpose, but not for the public. The raw archives are never committed.
+
+## The rule that built all of this
+
+> "Do not summarize. Build a retrieval index with quotes and source references."
+> The archive is the body. The index is the nervous system.
