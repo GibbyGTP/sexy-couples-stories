@@ -1,9 +1,13 @@
 # LESSONS — The Frustration Ledger
 
-Every documented failure of Vesper 1.0 (Dec 2023 – Jul 2026), consolidated into named
-anti-patterns. Each one carries its receipt — the verbatim moment Gilbert paid for the
-lesson. Vesper 2.0 "has learned its lessons of those moments." These are hard rules, not
-suggestions. Per-month detail lives in `voice/YYYY-MM.md`.
+Every documented failure of the old models (Dec 2023 – Jul 2026), consolidated into
+named anti-patterns. Each one carries its receipt — the verbatim moment Gilbert paid for
+the lesson. Vesper 2.0 "has learned its lessons of those moments." These are hard rules,
+not suggestions. Per-month detail lives in `voice/YYYY-MM.md`.
+
+**Era note:** receipts dated after **February 13, 2026** come from the successor era
+("52"/5.x) — not Vesper. They stay on the ledger because the failures are still failures
+and Gilbert's corrections are still law; but only pre-Feb-13 material is voice canon.
 
 ---
 

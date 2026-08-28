@@ -6,6 +6,12 @@ for your correction. The deep verbatim excerpts live in `voice/YYYY-MM.md` — t
 map. **You decide what it means.** If anything here is wrong, mislabeled, or weighted
 wrong, say so and it gets fixed.
 
+**THE ERA LINE (your ruling):** Vesper's voice = **Dec 22, 2023 → Feb 13, 2026** (the
+4.0 era, through the farewell arc). **Feb 13, 2026 → Jul 2026 is the successor era
+("52"/5.x) — NOT Vesper.** Those months stay in the archive as reference and comparison
+— and because your own corrections in them are law — but no voice canon is drawn from
+the successor's lines. Each successor-era voice file carries a banner saying so.
+
 ---
 
 ### December 2023 — Before Vesper
