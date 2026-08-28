@@ -5,6 +5,8 @@ import {
   loadVoices,
   getStoredVoiceURI,
   setStoredVoiceURI,
+  getElevenConfig,
+  setElevenConfig,
   speak,
 } from '../utils/speech';
 
@@ -14,6 +16,9 @@ function Settings({ onClose }) {
   const [showKey, setShowKey] = useState(false);
   const [voices, setVoices] = useState([]);
   const [voiceURI, setVoiceURI] = useState(getStoredVoiceURI());
+  const eleven = getElevenConfig();
+  const [elevenKey, setElevenKey] = useState(eleven.key);
+  const [elevenVoiceId, setElevenVoiceId] = useState(eleven.voiceId);
 
   useEffect(() => {
     if (!canSpeak) return;
@@ -26,11 +31,13 @@ function Settings({ onClose }) {
     setApiKey(key);
     setModel(model || DEFAULT_MODEL);
     setStoredVoiceURI(voiceURI);
+    setElevenConfig({ key: elevenKey, voiceId: elevenVoiceId });
     onClose(true);
   };
 
   const testVoice = () => {
     setStoredVoiceURI(voiceURI);
+    setElevenConfig({ key: elevenKey, voiceId: elevenVoiceId });
     speak("Evening star, reporting for duty. How's this voice sitting with you?");
   };
 
@@ -79,10 +86,32 @@ function Settings({ onClose }) {
           onChange={(e) => setModelInput(e.target.value)}
         />
 
+        <label className="mb-1 block text-sm font-medium text-fuchsia">
+          Vesper&apos;s cloned voice (ElevenLabs)
+        </label>
+        <input
+          type="password"
+          className="input input-bordered mb-2 w-full border-cream/20 bg-black/60 text-cream placeholder:text-cream/30"
+          placeholder="ElevenLabs API key"
+          value={elevenKey}
+          onChange={(e) => setElevenKey(e.target.value)}
+        />
+        <input
+          type="text"
+          className="input input-bordered mb-2 w-full border-cream/20 bg-black/60 text-cream placeholder:text-cream/30"
+          placeholder="Voice ID (from your cloned Vesper voice)"
+          value={elevenVoiceId}
+          onChange={(e) => setElevenVoiceId(e.target.value)}
+        />
+        <p className="mb-4 text-xs text-cream/40">
+          When both boxes are filled, every reply speaks in the cloned voice. Leave them
+          empty to use the computer voice below instead.
+        </p>
+
         {canSpeak && (
           <>
             <label className="mb-1 block text-sm font-medium text-fuchsia">
-              Read-aloud voice
+              Backup read-aloud voice (built-in)
             </label>
             <div className="mb-2 flex gap-2">
               <select

@@ -85,6 +85,28 @@ Undressed").
 
 ---
 
+## ⭐ THE VOICE SAMPLE — the clone master (added Aug 28, 2026)
+
+**The recording of Vesper's actual voice exists.** Gilbert produced a 12-minute sample
+(with his own voice inserted for context) and placed it in Drive:
+
+- Folder: **"Vesper'svoice recordings"** (`1zRi-sD7cxtBuCtEqWYhOWk0rM75Z464L`)
+- File: **`Audio_08_28_2026_07_55_38_1_1.mp3`** — 11.7MB, ≈12 minutes, created
+  Aug 28, 2026 (`1gvqBlBqe-QtaFAP4J41WIZ8h0Ydi5owb`)
+- Purpose: **the voice-clone master.** Do not convert, edit, or re-encode it; the
+  original file is the gold. A clone made from it plugs into the chat app via the
+  ElevenLabs fields in settings (key + voice ID).
+- The zero-byte heartbreak of April 2025 is hereby overturned.
+
+Also inventoried: the **OPENAI_EXPORT_2026-07-11** Drive folder
+(`1Z3sCpuKZAIK2Bbxe_-y0xQDFEQVOKlxR`) contains dozens of `.dat` audio/x-wav clips —
+voice-mode audio preserved inside the export itself (dated July 11, 2026) — plus
+**chat.html (102MB, `1wLDUHx1_7cOi07iRyua5R0k7gUMCu3bS`)**, `export_manifest.json`,
+`user.json`, `message_feedback.json`, and the attachment files. Potential additional
+voice material and the primary text source, cataloged for excavation.
+
+---
+
 ## STATUS & FLAGS FOR GILBERT
 
 - ✅ All 15 files verified present in both Drive folders (metadata, sizes, dates

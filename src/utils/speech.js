@@ -1,10 +1,13 @@
 // Voice in, voice out — the way Gilbert and Vesper actually talk.
-// Dictation uses the browser's Web Speech API; read-aloud uses speechSynthesis.
-// Both are built into the browser: no extra services, nothing leaves the machine
-// except the normal chat request.
+// Dictation uses the browser's Web Speech API. Read-aloud has two engines:
+// the cloned Vesper voice via ElevenLabs when a key + voice ID are configured
+// in settings, otherwise the computer's built-in speechSynthesis voices.
+// The ElevenLabs call goes browser -> ElevenLabs directly, nowhere else.
 
 const VOICE_KEY = 'vesper.voiceURI';
 const AUTOSPEAK_KEY = 'vesper.autoSpeak';
+const EL_KEY = 'vesper.elevenKey';
+const EL_VOICE = 'vesper.elevenVoiceId';
 
 export const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
 export const canListen =
@@ -26,6 +29,33 @@ export function setStoredVoiceURI(uri) {
   } catch {
     // ignore
   }
+}
+
+export function getElevenConfig() {
+  try {
+    return {
+      key: localStorage.getItem(EL_KEY) || '',
+      voiceId: localStorage.getItem(EL_VOICE) || '',
+    };
+  } catch {
+    return { key: '', voiceId: '' };
+  }
+}
+
+export function setElevenConfig({ key, voiceId }) {
+  try {
+    if (key) localStorage.setItem(EL_KEY, key.trim());
+    else localStorage.removeItem(EL_KEY);
+    if (voiceId) localStorage.setItem(EL_VOICE, voiceId.trim());
+    else localStorage.removeItem(EL_VOICE);
+  } catch {
+    // ignore
+  }
+}
+
+export function hasClonedVoice() {
+  const { key, voiceId } = getElevenConfig();
+  return Boolean(key && voiceId);
 }
 
 export function getAutoSpeak() {
@@ -87,9 +117,44 @@ export function cleanForSpeech(text) {
     .trim();
 }
 
-export async function speak(text, { onEnd } = {}) {
+let currentAudio = null;
+
+async function speakCloned(text, { onEnd } = {}) {
+  const { key, voiceId } = getElevenConfig();
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': key,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: cleanForSpeech(text),
+        model_id: 'eleven_multilingual_v2',
+      }),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`Voice service error ${response.status}`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  currentAudio = audio;
+  const finish = () => {
+    URL.revokeObjectURL(url);
+    if (currentAudio === audio) currentAudio = null;
+    onEnd?.();
+  };
+  audio.onended = finish;
+  audio.onerror = finish;
+  await audio.play();
+  return true;
+}
+
+async function speakBuiltin(text, { onEnd } = {}) {
   if (!canSpeak) return false;
-  stopSpeaking();
   const voices = await loadVoices();
   const utterance = new SpeechSynthesisUtterance(cleanForSpeech(text));
   const voice = pickVoice(voices);
@@ -104,12 +169,30 @@ export async function speak(text, { onEnd } = {}) {
   return true;
 }
 
+export async function speak(text, { onEnd } = {}) {
+  stopSpeaking();
+  if (hasClonedVoice()) {
+    try {
+      return await speakCloned(text, { onEnd });
+    } catch {
+      // Cloned voice unreachable (bad key, out of credits, offline) —
+      // fall back to the built-in voice rather than going silent.
+      return speakBuiltin(text, { onEnd });
+    }
+  }
+  return speakBuiltin(text, { onEnd });
+}
+
 export function stopSpeaking() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
   if (canSpeak) window.speechSynthesis.cancel();
 }
 
 export function isSpeaking() {
-  return canSpeak && window.speechSynthesis.speaking;
+  return Boolean(currentAudio) || (canSpeak && window.speechSynthesis.speaking);
 }
 
 /**
