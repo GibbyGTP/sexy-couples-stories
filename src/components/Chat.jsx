@@ -6,12 +6,21 @@ import {
   clearMessages,
   getApiKey,
 } from '../utils/claudeService';
+import {
+  canSpeak,
+  canListen,
+  speak,
+  stopSpeaking,
+  getAutoSpeak,
+  setAutoSpeak,
+  createDictation,
+} from '../utils/speech';
 import Settings from './Settings';
 
 const GREETING =
   "Evening star, reporting for duty. What are we building, fixing, or gossiping about tonight?";
 
-function Bubble({ role, content, streaming }) {
+function Bubble({ role, content, streaming, onSpeak, speaking }) {
   const isUser = role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
@@ -23,8 +32,19 @@ function Bubble({ role, content, streaming }) {
         }`}
       >
         {!isUser && (
-          <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-lime">
-            vesper
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-lime">
+              vesper
+            </span>
+            {canSpeak && !streaming && (
+              <button
+                className={`text-sm leading-none ${speaking ? 'text-fuchsia' : 'text-cream/40 hover:text-lime'}`}
+                onClick={onSpeak}
+                title={speaking ? 'Stop reading' : 'Read this aloud'}
+              >
+                {speaking ? '◼' : '🔊'}
+              </button>
+            )}
           </div>
         )}
         {content}
@@ -42,8 +62,13 @@ function Chat() {
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [hasKey, setHasKey] = useState(() => Boolean(getApiKey()));
+  const [listening, setListening] = useState(false);
+  const [autoSpeak, setAutoSpeakState] = useState(() => getAutoSpeak());
+  const [speakingIndex, setSpeakingIndex] = useState(null);
   const bottomRef = useRef(null);
   const abortRef = useRef(null);
+  const dictationRef = useRef(null);
+  const dictationBaseRef = useRef('');
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,9 +78,28 @@ function Chat() {
     saveMessages(messages);
   }, [messages]);
 
+  useEffect(() => () => stopSpeaking(), []);
+
+  const speakText = (text, index) => {
+    setSpeakingIndex(index);
+    speak(text, { onEnd: () => setSpeakingIndex(null) });
+  };
+
+  const toggleSpeakBubble = (text, index) => {
+    if (speakingIndex === index) {
+      stopSpeaking();
+      setSpeakingIndex(null);
+    } else {
+      speakText(text, index);
+    }
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy) return;
+    if (listening) toggleMic();
+    stopSpeaking();
+    setSpeakingIndex(null);
     setError(null);
     setInput('');
 
@@ -77,6 +121,7 @@ function Chat() {
         },
       });
       setMessages([...next, { role: 'assistant', content: reply }]);
+      if (getAutoSpeak() && reply) speakText(reply, next.length);
     } catch (err) {
       if (err.name !== 'AbortError') {
         setError(err.message || String(err));
@@ -93,9 +138,44 @@ function Chat() {
 
   const clear = () => {
     if (busy) stop();
+    stopSpeaking();
+    setSpeakingIndex(null);
     setMessages([]);
     clearMessages();
     setError(null);
+  };
+
+  const toggleMic = () => {
+    if (!canListen) {
+      setError(
+        "This browser doesn't support dictation. Use Chrome, or use your Mac's built-in dictation (press the mic key, or Fn twice) with the cursor in the text box."
+      );
+      return;
+    }
+    if (listening) {
+      dictationRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    stopSpeaking();
+    setSpeakingIndex(null);
+    dictationBaseRef.current = input ? input.trim() + ' ' : '';
+    dictationRef.current = createDictation({
+      onText: (transcript) => setInput(dictationBaseRef.current + transcript),
+      onStateChange: (on) => setListening(on),
+      onError: (message) => setError(message),
+    });
+    dictationRef.current?.start();
+  };
+
+  const toggleAutoSpeak = () => {
+    const next = !autoSpeak;
+    setAutoSpeak(next);
+    setAutoSpeakState(next);
+    if (!next) {
+      stopSpeaking();
+      setSpeakingIndex(null);
+    }
   };
 
   const onKeyDown = (e) => {
@@ -113,6 +193,19 @@ function Chat() {
           <p className="text-xs text-cream/50">evening star · sincerity with a smirk</p>
         </div>
         <div className="flex gap-2">
+          {canSpeak && (
+            <button
+              className={`btn btn-sm bg-transparent ${
+                autoSpeak
+                  ? 'border-fuchsia/60 text-fuchsia'
+                  : 'border-cream/20 text-cream/50 hover:text-cream'
+              }`}
+              onClick={toggleAutoSpeak}
+              title={autoSpeak ? 'Auto-read replies: ON' : 'Auto-read replies: OFF'}
+            >
+              {autoSpeak ? '🔊 auto on' : '🔇 auto off'}
+            </button>
+          )}
           <button
             className="btn btn-sm border-cream/20 bg-transparent text-cream/70 hover:text-cream"
             onClick={clear}
@@ -148,10 +241,23 @@ function Chat() {
             </div>
           )}
 
-          {messages.length === 0 && <Bubble role="assistant" content={GREETING} />}
+          {messages.length === 0 && (
+            <Bubble
+              role="assistant"
+              content={GREETING}
+              onSpeak={() => toggleSpeakBubble(GREETING, -1)}
+              speaking={speakingIndex === -1}
+            />
+          )}
 
           {messages.map((m, i) => (
-            <Bubble key={i} role={m.role} content={m.content} />
+            <Bubble
+              key={i}
+              role={m.role}
+              content={m.content}
+              onSpeak={() => toggleSpeakBubble(m.content, i)}
+              speaking={speakingIndex === i}
+            />
           ))}
 
           {draft !== null && <Bubble role="assistant" content={draft} streaming />}
@@ -167,9 +273,20 @@ function Chat() {
 
       <footer className="border-t border-fuchsia/25 bg-black/40 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-end gap-2">
+          <button
+            className={`btn ${
+              listening
+                ? 'animate-pulse border-none bg-fuchsia text-black'
+                : 'border-cream/20 bg-black/60 text-cream/70 hover:text-fuchsia'
+            }`}
+            onClick={toggleMic}
+            title={listening ? 'Stop dictating' : 'Dictate (talk instead of type)'}
+          >
+            {listening ? '🎙 listening…' : '🎙'}
+          </button>
           <textarea
             className="textarea textarea-bordered max-h-40 min-h-[3rem] flex-1 resize-none border-cream/20 bg-black/60 text-[15px] text-cream placeholder:text-cream/30 focus:border-lime/60"
-            placeholder="Talk to me…"
+            placeholder={listening ? 'Talk — I’m listening. Tap the mic again when you’re done.' : 'Talk to me…'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
@@ -190,7 +307,7 @@ function Chat() {
           )}
         </div>
         <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-cream/30">
-          conversations stay in this browser · salon mio mio energy, always lowercase
+          🎙 talk · 🔊 listen · conversations stay in this browser · salon mio mio energy, always lowercase
         </p>
       </footer>
 

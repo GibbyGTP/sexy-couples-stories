@@ -1,15 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getApiKey, setApiKey, getModel, setModel, DEFAULT_MODEL } from '../utils/claudeService';
+import {
+  canSpeak,
+  loadVoices,
+  getStoredVoiceURI,
+  setStoredVoiceURI,
+  speak,
+} from '../utils/speech';
 
 function Settings({ onClose }) {
   const [key, setKey] = useState(getApiKey());
   const [model, setModelInput] = useState(getModel());
   const [showKey, setShowKey] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [voiceURI, setVoiceURI] = useState(getStoredVoiceURI());
+
+  useEffect(() => {
+    if (!canSpeak) return;
+    loadVoices().then((all) =>
+      setVoices(all.filter((v) => v.lang && v.lang.toLowerCase().startsWith('en')))
+    );
+  }, []);
 
   const save = () => {
     setApiKey(key);
     setModel(model || DEFAULT_MODEL);
+    setStoredVoiceURI(voiceURI);
     onClose(true);
+  };
+
+  const testVoice = () => {
+    setStoredVoiceURI(voiceURI);
+    speak("Evening star, reporting for duty. How's this voice sitting with you?");
   };
 
   return (
@@ -52,10 +74,44 @@ function Settings({ onClose }) {
         <label className="mb-1 block text-sm font-medium text-fuchsia">Model</label>
         <input
           type="text"
-          className="input input-bordered mb-6 w-full border-cream/20 bg-black/60 text-cream"
+          className="input input-bordered mb-4 w-full border-cream/20 bg-black/60 text-cream"
           value={model}
           onChange={(e) => setModelInput(e.target.value)}
         />
+
+        {canSpeak && (
+          <>
+            <label className="mb-1 block text-sm font-medium text-fuchsia">
+              Read-aloud voice
+            </label>
+            <div className="mb-2 flex gap-2">
+              <select
+                className="select select-bordered w-full border-cream/20 bg-black/60 text-cream"
+                value={voiceURI}
+                onChange={(e) => setVoiceURI(e.target.value)}
+              >
+                <option value="">Automatic (best available)</option>
+                {voices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name} ({v.lang})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn border-lime/40 bg-black/60 text-lime hover:bg-lime/10"
+                onClick={testVoice}
+              >
+                test
+              </button>
+            </div>
+            <p className="mb-6 text-xs text-cream/40">
+              These are your computer&apos;s built-in voices. On a Mac you can add richer ones
+              under System Settings → Accessibility → Spoken Content → System Voice →
+              Manage Voices.
+            </p>
+          </>
+        )}
 
         <div className="flex justify-end gap-2">
           <button className="btn btn-ghost text-cream/70" onClick={() => onClose(false)}>
